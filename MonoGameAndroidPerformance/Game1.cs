@@ -1,3 +1,5 @@
+using System;
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -12,6 +14,14 @@ namespace MonoGameAndroidPerformance
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
+        private SpriteFont _font;
+
+        // Performance
+        private FPSCounter _fpsCounter = new FPSCounter();
+        private Stopwatch _stopWatch = new Stopwatch();
+        private TimeSpan _updateTime;
+        private TimeSpan _drawTime;
+
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -20,7 +30,11 @@ namespace MonoGameAndroidPerformance
             graphics.IsFullScreen = true;
             graphics.PreferredBackBufferWidth = 800;
             graphics.PreferredBackBufferHeight = 480;
-            graphics.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
+            graphics.SupportedOrientations = DisplayOrientation.Portrait;
+
+            // Unlock FPS
+            //IsFixedTimeStep = false;
+            //graphics.SynchronizeWithVerticalRetrace = false;
         }
 
         /// <summary>
@@ -45,6 +59,8 @@ namespace MonoGameAndroidPerformance
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            _font = Content.Load<SpriteFont>("font");
+
             // TODO: use this.Content to load your game content here
         }
 
@@ -64,12 +80,19 @@ namespace MonoGameAndroidPerformance
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            _fpsCounter.Update(gameTime);
+
+            _stopWatch.Reset();
+            _stopWatch.Start();
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 Exit();
 
             // TODO: Add your update logic here
 
             base.Update(gameTime);
+
+            _updateTime = _stopWatch.Elapsed;
         }
 
         /// <summary>
@@ -78,11 +101,26 @@ namespace MonoGameAndroidPerformance
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+            _fpsCounter.Draw(gameTime);
+
+            _stopWatch.Reset();
+            _stopWatch.Start();
+
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             // TODO: Add your drawing code here
 
+            _drawTime = _stopWatch.Elapsed;
+
             base.Draw(gameTime);
+
+            spriteBatch.Begin();
+
+            spriteBatch.DrawString(_font, $"FPS: {_fpsCounter.FramesPerSecond}", Vector2.Zero, Color.White);
+            spriteBatch.DrawString(_font, $"Update time: {_updateTime.TotalMilliseconds} ms", new Vector2(0, 20f), Color.White);
+            spriteBatch.DrawString(_font, $"Draw time: { _drawTime.TotalMilliseconds } ms", new Vector2(0, 40f), Color.White);
+
+            spriteBatch.End();
         }
     }
 }
